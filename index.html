@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Калькулятор баллов зачёта Die Hard: дистанция, темп и коэффициент.">
+<title>Калькулятор баллов Die Hard</title>
+<style>
+  :root {
+    /* светлая тема — прохладная бумага с зелёным уклоном */
+    --bg:        #EDEFEC;
+    --surface:   #FFFFFF;
+    --surface-2: #F6F8F5;
+    --ink:       #14181A;
+    --ink-2:     #3E4A44;
+    --muted:     #6B776F;
+    --line:      #D5DAD4;
+    --line-2:    #C2C9C0;
+    --accent:    #1F6B45;
+    --accent-in: #FFFFFF;
+    --warn:      #A65611;
+    --warn-bg:   #F6EBDD;
+    --heat:      #1F6B45;
+    --heat-cap:  52;
+    --shadow:    0 1px 2px rgba(20,24,26,.06), 0 8px 24px -16px rgba(20,24,26,.35);
+
+    --f-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --f-num: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Roboto Mono", monospace;
+
+    --step: clamp(.55rem, .4rem + .6vw, .9rem);
+    --maxw: 62rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:        #0E1311;
+      --surface:   #151B18;
+      --surface-2: #1A211D;
+      --ink:       #E7EDE9;
+      --ink-2:     #BCC7C1;
+      --muted:     #8B9891;
+      --line:      #232D28;
+      --line-2:    #2F3A34;
+      --accent:    #4EC98D;
+      --accent-in: #06120C;
+      --warn:      #E3A055;
+      --warn-bg:   #2A2117;
+      --heat:      #35D18C;
+      --heat-cap:  44;
+      --shadow:    0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.9);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:        #0E1311;
+    --surface:   #151B18;
+    --surface-2: #1A211D;
+    --ink:       #E7EDE9;
+    --ink-2:     #BCC7C1;
+    --muted:     #8B9891;
+    --line:      #232D28;
+    --line-2:    #2F3A34;
+    --accent:    #4EC98D;
+    --accent-in: #06120C;
+    --warn:      #E3A055;
+    --warn-bg:   #2A2117;
+    --heat:      #35D18C;
+    --heat-cap:  44;
+    --shadow:    0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.9);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--f-ui);
+    font-size: 16px;
+    line-height: 1.55;
+    margin: 0;
+    padding: clamp(1.25rem, 1rem + 2vw, 3rem) 1.1rem 4rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  }
+
+  /* ---------- шапка ---------- */
+
+  .eyebrow {
+    font-size: .72rem;
+    font-weight: 650;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 .5rem;
+  }
+
+  h1 {
+    font-size: clamp(1.9rem, 1.4rem + 2.4vw, 3.1rem);
+    line-height: 1.02;
+    letter-spacing: -.03em;
+    font-weight: 800;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .lede {
+    margin: .85rem 0 0;
+    max-width: 46ch;
+    color: var(--ink-2);
+    font-size: 1.02rem;
+  }
+
+  /* ---------- карточки ---------- */
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+  }
+
+  .card-pad { padding: clamp(1rem, .8rem + 1vw, 1.6rem); }
+
+  h2 {
+    font-size: .74rem;
+    font-weight: 650;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 .9rem;
+  }
+
+  /* ---------- панель управления ---------- */
+
+  .calc {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+    gap: 0;
+  }
+
+  @media (max-width: 720px) {
+    .calc { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+    padding: clamp(1rem, .8rem + 1vw, 1.6rem);
+  }
+
+  .ctl-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .ctl-label {
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .ctl-val {
+    font-family: var(--f-num);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -.01em;
+  }
+
+  .ctl-val small {
+    font-size: .8rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-left: .35rem;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 1.5rem;
+    background: transparent;
+    margin: 0;
+    display: block;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 3px;
+    background: var(--line-2);
+    border-radius: 2px;
+  }
+
+  input[type="range"]::-moz-range-track {
+    height: 3px;
+    background: var(--line-2);
+    border-radius: 2px;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: -.53rem;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--accent);
+    cursor: pointer;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--accent);
+    cursor: pointer;
+  }
+
+  input[type="range"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 3px;
+  }
+
+  .ctl-scale {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--f-num);
+    font-size: .7rem;
+    color: var(--muted);
+    margin-top: -.35rem;
+  }
+
+  .check {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    padding-top: .3rem;
+    cursor: pointer;
+  }
+
+  .check input {
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: .22rem 0 0;
+    accent-color: var(--accent);
+    flex: none;
+  }
+
+  .check span { font-size: .92rem; color: var(--ink-2); }
+  .check b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- результат ---------- */
+
+  .result {
+    background: var(--surface-2);
+    border-left: 1px solid var(--line);
+    padding: clamp(1rem, .8rem + 1vw, 1.6rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: .35rem;
+  }
+
+  @media (max-width: 720px) {
+    .result { border-left: 0; border-top: 1px solid var(--line); }
+  }
+
+  .score {
+    font-family: var(--f-num);
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(3rem, 2rem + 7vw, 4.6rem);
+    font-weight: 700;
+    line-height: .95;
+    letter-spacing: -.04em;
+    color: var(--accent);
+  }
+
+  .score-unit {
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .breakdown {
+    font-family: var(--f-num);
+    font-size: .84rem;
+    color: var(--ink-2);
+    margin-top: .5rem;
+    line-height: 1.7;
+  }
+
+  .breakdown .op { color: var(--muted); }
+
+  .flag {
+    margin-top: .7rem;
+    padding: .55rem .7rem;
+    background: var(--warn-bg);
+    border-left: 2px solid var(--warn);
+    color: var(--warn);
+    font-size: .84rem;
+    line-height: 1.45;
+  }
+
+  .flag:empty { display: none; }
+
+  /* ---------- рычаги ---------- */
+
+  .levers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .lever {
+    background: var(--surface);
+    padding: .85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+  }
+
+  .lever-k {
+    font-size: .72rem;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .lever-v {
+    font-family: var(--f-num);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.35rem;
+    font-weight: 650;
+    letter-spacing: -.02em;
+  }
+
+  .lever-n { font-size: .78rem; color: var(--muted); }
+
+  /* ---------- таблица ---------- */
+
+  .scroller {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--surface);
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: var(--f-num);
+    font-variant-numeric: tabular-nums;
+    font-size: .78rem;
+  }
+
+  th, td {
+    padding: .42rem .5rem;
+    text-align: right;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--line);
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line-2);
+    font-weight: 600;
+    color: var(--muted);
+    font-size: .72rem;
+  }
+
+  tbody th {
+    text-align: left;
+    font-weight: 650;
+    color: var(--ink-2);
+    background: var(--surface);
+    position: sticky;
+    left: 0;
+    border-right: 1px solid var(--line-2);
+  }
+
+  thead th:first-child {
+    left: 0;
+    z-index: 2;
+    text-align: left;
+    border-right: 1px solid var(--line-2);
+  }
+
+  td.hit {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    font-weight: 700;
+  }
+
+  .tnote {
+    font-size: .82rem;
+    color: var(--muted);
+    margin: .7rem 0 0;
+  }
+
+  /* ---------- серия ---------- */
+
+  .streak {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: clamp(1rem, .8rem + 1.5vw, 2rem);
+    align-items: center;
+  }
+
+  @media (max-width: 720px) {
+    .streak { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .chart { width: 100%; height: auto; display: block; }
+
+  .verdict {
+    font-size: .95rem;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+
+  .verdict b { color: var(--ink); }
+
+  .verdict .big {
+    display: block;
+    font-family: var(--f-num);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: var(--ink);
+    margin-bottom: .3rem;
+  }
+
+  /* ---------- правила ---------- */
+
+  .rules {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1.5rem 2rem;
+  }
+
+  .rules h3 {
+    font-size: .74rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 .5rem;
+    font-weight: 650;
+  }
+
+  .rules ul { margin: 0; padding-left: 1.05rem; }
+  .rules li { margin-bottom: .38rem; font-size: .92rem; color: var(--ink-2); }
+  .rules li b { color: var(--ink); font-weight: 600; }
+
+  .foot {
+    font-size: .82rem;
+    color: var(--muted);
+    line-height: 1.6;
+    border-top: 1px solid var(--line);
+    padding-top: 1rem;
+    margin: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .score, .lever-v { transition: color .15s ease; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Die Hard · длительные по воскресеньям</p>
+    <h1>Сколько баллов даст твоя воскресная длительная</h1>
+    <p class="lede">Крути дистанцию, темп и свой коэффициент — считает по официальной таблице зачёта. Ниже видно, что выгоднее добавить: километры или скорость.</p>
+  </header>
+
+  <section class="card calc">
+    <div class="controls">
+
+      <div>
+        <div class="ctl-head">
+          <label class="ctl-label" for="km">Дистанция</label>
+          <span class="ctl-val" id="km-out">30.0<small>км</small></span>
+        </div>
+        <input type="range" id="km" min="20" max="42.2" step="0.1" value="30">
+        <div class="ctl-scale"><span>20</span><span>30</span><span>42.2</span></div>
+      </div>
+
+      <div>
+        <div class="ctl-head">
+          <label class="ctl-label" for="pace">Средний темп</label>
+          <span class="ctl-val" id="pace-out">5:50<small>/км · 10.3 км/ч</small></span>
+        </div>
+        <input type="range" id="pace" min="180" max="480" step="5" value="350">
+        <div class="ctl-scale"><span>3:00</span><span>5:30</span><span>8:00</span></div>
+      </div>
+
+      <div>
+        <div class="ctl-head">
+          <label class="ctl-label" for="coef">Коэффициент</label>
+          <span class="ctl-val" id="coef-out">1.2</span>
+        </div>
+        <input type="range" id="coef" min="1" max="2" step="0.1" value="1.2">
+        <div class="ctl-scale"><span>1.0 старт</span><span>1.5</span><span>2.0 максимум</span></div>
+      </div>
+
+      <label class="check">
+        <input type="checkbox" id="reg">
+        <span><b>Записался заранее</b> — до воскресенья, +3 балла</span>
+      </label>
+
+    </div>
+
+    <div class="result">
+      <div class="score" id="score">25.08</div>
+      <div class="score-unit" id="unit">балла за пробежку</div>
+      <div class="breakdown" id="breakdown"></div>
+      <div class="flag" id="flag"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Что выгоднее добавить</h2>
+    <div class="levers">
+      <div class="lever">
+        <span class="lever-k">+1 километр</span>
+        <span class="lever-v" id="lv-km">+0.77</span>
+        <span class="lever-n">бежать дольше</span>
+      </div>
+      <div class="lever">
+        <span class="lever-k">−10 сек/км</span>
+        <span class="lever-v" id="lv-pace">+2.88</span>
+        <span class="lever-n" id="lv-pace-n">= 3.7 км дистанции</span>
+      </div>
+      <div class="lever">
+        <span class="lever-k">Запись заранее</span>
+        <span class="lever-v" id="lv-reg">+3.00</span>
+        <span class="lever-n" id="lv-reg-n">= 3.9 км, бесплатно</span>
+      </div>
+      <div class="lever">
+        <span class="lever-k">+0.1 коэффициента</span>
+        <span class="lever-v" id="lv-coef">+1.84</span>
+        <span class="lever-n">одна явка</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Вся таблица · твой коэффициент <span id="grid-coef">1.2</span></h2>
+    <div class="scroller">
+      <table id="grid">
+        <thead><tr id="grid-head"></tr></thead>
+        <tbody id="grid-body"></tbody>
+      </table>
+    </div>
+    <p class="tnote">Обведена ячейка, ближайшая к твоим настройкам. Насыщенность заливки — величина баллов. Обрати внимание на скачок между 6:00 и 5:50: это граница бонусной зоны, десять секунд там стоят дороже, чем где-либо ещё.</p>
+  </section>
+
+  <section class="card card-pad">
+    <h2>Коэффициент — это не про тебя, а про твою серию</h2>
+    <div class="streak">
+      <div>
+        <div class="ctl-head">
+          <label class="ctl-label" for="att">Как часто получается приходить</label>
+          <span class="ctl-val" id="att-out">100<small>% воскресений</small></span>
+        </div>
+        <input type="range" id="att" min="0" max="100" step="5" value="100">
+        <div class="ctl-scale"><span>никогда</span><span>2 из 3</span><span>каждое</span></div>
+        <svg class="chart" id="chart" viewBox="0 0 420 170" role="img" aria-label="Прогноз коэффициента на 16 недель"></svg>
+      </div>
+      <p class="verdict" id="verdict"></p>
+    </div>
+  </section>
+
+  <section class="card card-pad">
+    <h2>Правила зачёта</h2>
+    <div class="rules">
+      <div>
+        <h3>Когда пробежка считается</h3>
+        <ul>
+          <li>От <b>20 км</b> и быстрее <b>7:00/км</b> — минимум <b>5 баллов</b>.</li>
+          <li>Дальше баллы растут от километров и темпа.</li>
+          <li>Пробежал меньше 20 км — это <b>то же самое, что пропуск</b>.</li>
+          <li>Медленнее <b>8:00/км</b> — не учитывается вообще.</li>
+          <li>Девушкам к итогу <b>+10%</b>.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Как двигается коэффициент</h3>
+        <ul>
+          <li>Старт — <b>1.0</b>, потолок — <b>2.0</b>.</li>
+          <li>Успешная длительная: <b>+0.1</b>.</li>
+          <li>Пропуск: <b>−0.2</b> — вдвое дороже.</li>
+          <li>Умножается вся заработанная сумма.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Мелочи, которые дают много</h3>
+        <ul>
+          <li>Запись до воскресенья — <b>+3 балла</b>, это несколько километров задаром.</li>
+          <li>Бонусная зона открывается на <b>5:50/км</b>, следующая ступень — на <b>4:30/км</b>.</li>
+          <li>После <b>35 км</b> лишние километры почти не добавляют баллов.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">
+    Считает по официальной таблице организаторов — она опубликована для коэффициента 2.0, здесь пересчитано на твой. Одно место требует уточнения: прибавляются ли <b>+3 за запись</b> до умножения на коэффициент или после (здесь — после). На выбор «длиннее или быстрее» это не влияет.
+  </p>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var PACES = [420,410,400,390,380,370,360,350,340,330,320,310,300,290,280,270,260,250,240,230,220,210,200,190,180];
+
+  // Таблица организаторов, посчитанная для коэффициента 2.0.
+  var TABLE = {
+    20:[10.00,10.17,10.35,10.52,10.70,10.87,11.05,14.45,17.86,21.26,24.66,28.06,31.47,34.87,38.27,41.68,46.78,51.89,56.99,63.80,70.60,77.41,80.81,84.22,87.62],
+    21:[10.00,10.52,11.05,11.57,12.10,12.62,13.14,16.69,20.23,23.77,27.31,30.86,34.40,37.94,41.49,45.03,50.34,55.66,60.97,68.06,75.14,82.23,85.77,89.31,92.86],
+    22:[10.00,10.87,11.75,12.62,13.49,14.37,15.24,18.92,22.60,26.29,29.97,33.65,37.33,41.02,44.70,48.38,53.90,59.43,64.95,72.32,79.68,87.05,90.73,94.41,98.10],
+    23:[10.00,11.22,12.44,13.67,14.89,16.11,17.33,21.16,24.98,28.80,32.62,36.44,40.27,44.09,47.91,51.73,57.47,63.20,68.93,76.58,84.22,91.87,95.69,99.51,103.33],
+    24:[10.00,11.57,13.14,14.71,16.29,17.86,19.43,23.39,27.35,31.31,35.28,39.24,43.20,47.16,51.12,55.09,61.03,66.97,72.91,80.84,88.76,96.69,100.65,104.61,108.57],
+    25:[10.00,11.92,13.84,15.76,17.68,19.60,21.52,25.63,29.73,33.83,37.93,42.03,46.13,50.23,54.34,58.44,64.59,70.74,76.90,85.10,93.30,101.50,105.61,109.71,113.81],
+    26:[10.00,12.27,14.54,16.81,19.08,21.35,23.62,27.86,32.10,36.34,40.58,44.83,49.07,53.31,57.55,61.79,68.15,74.51,80.88,89.36,97.84,106.32,110.57,114.81,119.05],
+    27:[10.00,12.62,15.24,17.86,20.48,23.10,25.71,30.10,34.48,38.86,43.24,47.62,52.00,56.38,60.76,65.14,71.71,78.29,84.86,93.62,102.38,111.14,115.52,119.90,124.29],
+    28:[10.00,12.97,15.94,18.90,21.87,24.84,27.81,32.33,36.85,41.37,45.89,50.41,54.93,59.45,63.97,68.50,75.28,82.06,88.84,97.88,106.92,115.96,120.48,125.00,129.52],
+    29:[10.00,13.32,16.63,19.95,23.27,26.59,29.90,34.57,39.23,43.89,48.55,53.21,57.87,62.53,67.19,71.85,78.84,85.83,92.82,102.14,111.46,120.78,125.44,130.10,134.76],
+    30:[10.00,13.67,17.33,21.00,24.67,28.33,32.00,36.80,41.60,46.40,51.20,56.00,60.80,65.60,70.40,75.20,82.40,89.60,96.80,106.40,116.00,125.60,130.40,135.20,140.00],
+    31:[10.00,13.87,17.73,21.60,25.47,29.33,33.20,38.08,42.96,47.84,52.72,57.60,62.48,67.36,72.24,77.12,84.44,91.76,99.08,108.84,118.60,128.36,133.24,138.12,143.00],
+    32:[10.00,14.07,18.13,22.20,26.27,30.33,34.40,39.36,44.32,49.28,54.24,59.20,64.16,69.12,74.08,79.04,86.48,93.92,101.36,111.28,121.20,131.12,136.08,141.04,146.00],
+    33:[10.00,14.27,18.53,22.80,27.07,31.33,35.60,40.64,45.68,50.72,55.76,60.80,65.84,70.88,75.92,80.96,88.52,96.08,103.64,113.72,123.80,133.88,138.92,143.96,149.00],
+    34:[10.00,14.47,18.93,23.40,27.87,32.33,36.80,41.92,47.04,52.16,57.28,62.40,67.52,72.64,77.76,82.88,90.56,98.24,105.92,116.16,126.40,136.64,141.76,146.88,152.00],
+    35:[10.00,14.67,19.33,24.00,28.67,33.33,38.00,43.20,48.40,53.60,58.80,64.00,69.20,74.40,79.60,84.80,92.60,100.40,108.20,118.60,129.00,139.40,144.60,149.80,155.00],
+    36:[10.00,14.67,19.34,24.02,28.69,33.36,38.03,43.23,48.43,53.64,58.84,64.04,69.24,74.45,79.65,84.85,92.65,100.46,108.26,118.66,129.07,139.47,144.67,149.87,155.07],
+    37:[10.00,14.68,19.35,24.03,28.71,33.38,38.06,43.27,48.47,53.67,58.88,64.08,69.29,74.49,79.69,84.90,92.70,100.51,108.32,118.73,129.13,139.54,144.75,149.95,155.15],
+    38:[10.00,14.68,19.36,24.05,28.73,33.41,38.09,43.30,48.50,53.71,58.92,64.12,69.33,74.54,79.74,84.95,92.76,100.57,108.38,118.79,129.20,139.61,144.82,150.02,155.23],
+    39:[10.00,14.69,19.37,24.06,28.75,33.44,38.12,43.33,48.54,53.75,58.96,64.16,69.37,74.58,79.79,85.00,92.81,100.62,108.43,118.85,129.27,139.68,144.89,150.10,155.31],
+    40:[10.00,14.69,19.38,24.08,28.77,33.46,38.15,43.36,48.57,53.78,58.99,64.21,69.42,74.63,79.84,85.05,92.86,100.68,108.49,118.91,129.33,139.75,144.96,150.17,155.38],
+    41:[10.00,14.70,19.39,24.09,28.79,33.49,38.18,43.40,48.61,53.82,59.03,64.25,69.46,74.67,79.88,85.10,92.91,100.73,108.55,118.98,129.40,139.82,145.04,150.25,155.46],
+    42:[10.00,14.70,19.41,24.11,28.81,33.51,38.22,43.43,48.64,53.86,59.07,64.29,69.50,74.72,79.93,85.14,92.97,100.79,108.61,119.04,129.47,139.90,145.11,150.32,155.54]
+  };
+
+  var KMS = Object.keys(TABLE).map(Number).sort(function (a, b) { return a - b; });
+  var SPEEDS = PACES.map(function (p) { return 3600 / p; });   // возрастают
+
+  var TABLE_COEF = 2, MIN_KM = 20, MAX_PACE = 420, CUTOFF = 480;
+  var MIN_BASE = 5, REG = 3;
+
+  function span(axis, x) {
+    var n = axis.length;
+    if (x <= axis[0]) return [0, 0];
+    if (x >= axis[n - 1]) return [n - 2, 1];
+    var i = 1;
+    while (axis[i] < x) i++;
+    var lo = i - 1, d = axis[i] - axis[lo];
+    return [lo, d ? (x - axis[lo]) / d : 0];
+  }
+
+  function raw(km, pace) {
+    var a = span(KMS, km), b = span(SPEEDS, 3600 / pace);
+    var r0 = TABLE[KMS[a[0]]], r1 = TABLE[KMS[a[0] + 1]], j = b[0], tj = b[1];
+    var lo = r0[j] + (r0[j + 1] - r0[j]) * tj;
+    var hi = r1[j] + (r1[j + 1] - r1[j]) * tj;
+    return lo + (hi - lo) * a[1];
+  }
+
+  function base(km, pace) {
+    if (km < MIN_KM || pace > MAX_PACE) return 0;
+    return Math.max(MIN_BASE, raw(km, pace) / TABLE_COEF);
+  }
+
+  function points(km, pace, coef, reg) {
+    var b = base(km, pace);
+    if (!b) return 0;
+    return b * coef + (reg ? REG : 0);
+  }
+
+  function fmtPace(sec) {
+    var m = Math.floor(sec / 60), s = Math.round(sec - m * 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function dur(sec) {
+    sec = Math.round(sec);
+    var h = Math.floor(sec / 3600), m = Math.floor((sec - h * 3600) / 60), s = sec % 60;
+    return h + ":" + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function nice(n) { return (n >= 0 ? "+" : "−") + Math.abs(n).toFixed(2); }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {
+    km: $("km"), pace: $("pace"), coef: $("coef"), reg: $("reg"), att: $("att"),
+    kmOut: $("km-out"), paceOut: $("pace-out"), coefOut: $("coef-out"), attOut: $("att-out"),
+    score: $("score"), unit: $("unit"), breakdown: $("breakdown"), flag: $("flag"),
+    lvKm: $("lv-km"), lvPace: $("lv-pace"), lvPaceN: $("lv-pace-n"),
+    lvReg: $("lv-reg"), lvRegN: $("lv-reg-n"), lvCoef: $("lv-coef"),
+    gridHead: $("grid-head"), gridBody: $("grid-body"), gridCoef: $("grid-coef"),
+    chart: $("chart"), verdict: $("verdict")
+  };
+
+  /* ---------- сетка ---------- */
+
+  var GRID_KMS = [20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42];
+  var GRID_PACES = PACES.slice(0, 19);          // 7:00 … 4:00
+  var cells = [];
+
+  (function buildGrid() {
+    var h = '<th scope="col">км \\ темп</th>';
+    GRID_PACES.forEach(function (p) { h += '<th scope="col">' + fmtPace(p) + "</th>"; });
+    el.gridHead.innerHTML = h;
+
+    var body = "";
+    GRID_KMS.forEach(function (km) {
+      body += '<tr><th scope="row">' + km + "</th>";
+      GRID_PACES.forEach(function (p) {
+        body += '<td data-km="' + km + '" data-pace="' + p + '"></td>';
+      });
+      body += "</tr>";
+    });
+    el.gridBody.innerHTML = body;
+    cells = Array.prototype.slice.call(el.gridBody.querySelectorAll("td"));
+  })();
+
+  function paintGrid(coef, km, pace) {
+    var cap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--heat-cap")) || 50;
+    var max = points(42, 240, coef, false);
+    var bestKm = GRID_KMS.reduce(function (a, b) {
+      return Math.abs(b - km) < Math.abs(a - km) ? b : a;
+    });
+    var bestPace = GRID_PACES.reduce(function (a, b) {
+      return Math.abs(b - pace) < Math.abs(a - pace) ? b : a;
+    });
+
+    cells.forEach(function (td) {
+      var k = +td.dataset.km, p = +td.dataset.pace;
+      var v = points(k, p, coef, false);
+      td.textContent = v.toFixed(1);
+      var t = max ? Math.pow(v / max, 0.8) : 0;
+      td.style.background = "color-mix(in oklab, var(--heat) " + (t * cap).toFixed(1) + "%, transparent)";
+      td.classList.toggle("hit", k === bestKm && p === bestPace);
+    });
+    el.gridCoef.textContent = coef.toFixed(1);
+  }
+
+  /* ---------- серия ---------- */
+
+  function drawStreak(coef, att) {
+    var W = 420, H = 170, PAD_L = 30, PAD_R = 8, PAD_T = 12, PAD_B = 26;
+    var weeks = 16;
+    var drift = 0.1 * att - 0.2 * (1 - att);       // ожидаемое изменение за неделю
+    var pts = [], c = coef;
+    for (var w = 0; w <= weeks; w++) {
+      pts.push(c);
+      c = Math.max(1, Math.min(2, c + drift));
+    }
+
+    var x = function (i) { return PAD_L + i / weeks * (W - PAD_L - PAD_R); };
+    var y = function (v) { return PAD_T + (2 - v) / 1 * (H - PAD_T - PAD_B); };
+
+    var s = "";
+    [1, 1.5, 2].forEach(function (v) {
+      s += '<line x1="' + PAD_L + '" y1="' + y(v).toFixed(1) + '" x2="' + (W - PAD_R) +
+           '" y2="' + y(v).toFixed(1) + '" stroke="var(--line-2)" stroke-width="1"/>';
+      s += '<text x="' + (PAD_L - 6) + '" y="' + (y(v) + 3.5).toFixed(1) +
+           '" text-anchor="end" font-size="9" fill="var(--muted)" font-family="var(--f-num)">' +
+           v.toFixed(1) + "</text>";
+    });
+    s += '<text x="' + PAD_L + '" y="' + (H - 8) + '" font-size="9" fill="var(--muted)" font-family="var(--f-num)">сейчас</text>';
+    s += '<text x="' + (W - PAD_R) + '" y="' + (H - 8) + '" text-anchor="end" font-size="9" fill="var(--muted)" font-family="var(--f-num)">через 16 недель</text>';
+
+    var d = pts.map(function (v, i) { return (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1); }).join(" ");
+    s += '<path d="' + d + '" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>';
+    s += '<circle cx="' + x(weeks).toFixed(1) + '" cy="' + y(pts[weeks]).toFixed(1) +
+         '" r="4" fill="var(--accent)"/>';
+    el.chart.innerHTML = s;
+
+    var end = pts[weeks];
+    var txt;
+    if (att > 0.67) {
+      txt = '<span class="big">' + coef.toFixed(1) + " → " + end.toFixed(1) + "</span>" +
+            "При такой посещаемости коэффициент <b>растёт</b>. Каждая явка добавляет 0.1, и этого хватает, чтобы перекрывать редкие пропуски.";
+    } else if (Math.abs(att - 2 / 3) < 0.03) {
+      txt = '<span class="big">' + coef.toFixed(1) + " → " + end.toFixed(1) + "</span>" +
+            "Это <b>точка безубыточности</b>: два воскресенья из трёх. Коэффициент стоит на месте — ни роста, ни падения.";
+    } else {
+      txt = '<span class="big">' + coef.toFixed(1) + " → " + end.toFixed(1) + "</span>" +
+            "Реже двух воскресений из трёх — и коэффициент <b>сползает к минимуму</b> и остаётся там. Пропуск отнимает 0.2, явка возвращает только 0.1.";
+    }
+    txt += "<br><br>Отсюда простое правило: <b>2 из 3 воскресений</b> — это ровно то, что нужно, чтобы просто удерживать множитель. Ходить реже — значит бегать за базовые баллы без бонуса.";
+    el.verdict.innerHTML = txt;
+  }
+
+  /* ---------- пересчёт ---------- */
+
+  function render() {
+    var km = parseFloat(el.km.value);
+    var pace = parseFloat(el.pace.value);
+    var coef = parseFloat(el.coef.value);
+    var reg = el.reg.checked;
+    var att = parseFloat(el.att.value) / 100;
+
+    el.kmOut.innerHTML = km.toFixed(1) + "<small>км</small>";
+    el.paceOut.innerHTML = fmtPace(pace) + "<small>/км · " + (3600 / pace).toFixed(1) +
+                           " км/ч · " + dur(km * pace) + "</small>";
+    el.coefOut.textContent = coef.toFixed(1);
+    el.attOut.innerHTML = Math.round(att * 100) + "<small>% воскресений</small>";
+
+    var b = base(km, pace);
+    var total = points(km, pace, coef, reg);
+
+    if (pace > CUTOFF) {
+      el.score.textContent = "—";
+      el.unit.textContent = "не учитывается";
+      el.breakdown.textContent = "Медленнее 8:00/км — тренировка не идёт в зачёт вообще.";
+      el.flag.textContent = "";
+    } else if (!b) {
+      el.score.textContent = "0";
+      el.unit.textContent = "засчитывается как пропуск";
+      el.breakdown.innerHTML = (km < MIN_KM ? "Короче 20 км" : "Медленнее 7:00/км") +
+        " — баллов нет, и коэффициент падает так же, как если бы ты не пришёл." +
+        '<br><span class="op">коэффициент</span> ' + coef.toFixed(1) +
+        ' <span class="op">→</span> ' + Math.max(1, coef - 0.2).toFixed(1);
+      el.flag.textContent = "";
+    } else {
+      el.score.textContent = total.toFixed(2);
+      el.unit.textContent = "балла за пробежку";
+      el.breakdown.innerHTML = "база " + b.toFixed(2) + ' <span class="op">×</span> коэф. ' +
+        coef.toFixed(1) + (reg ? ' <span class="op">+</span> 3 за запись' : "") +
+        '<br><span class="op">время в пути</span> ' + dur(km * pace);
+
+      if (pace > 350 && pace <= 420) {
+        var gain = points(km, 350, coef, reg) - total;
+        el.flag.innerHTML = "Ты вне бонусной зоны. Разогнаться до 5:50/км — это сразу " +
+                            nice(gain) + " балла.";
+      } else if (km > 35) {
+        el.flag.innerHTML = "После 35 км таблица упирается в потолок: следующие километры дают около нуля.";
+      } else {
+        el.flag.textContent = "";
+      }
+    }
+
+    var dKm = base(Math.min(km + 1, 42.2), pace) * coef - b * coef;
+    var dPace = base(km, Math.max(pace - 10, 180)) * coef - b * coef;
+    el.lvKm.textContent = nice(dKm);
+    el.lvPace.textContent = nice(dPace);
+    el.lvPaceN.textContent = dKm > 0.01 ? "= " + (dPace / dKm).toFixed(1) + " км дистанции" : "дистанция уже не даёт";
+    el.lvReg.textContent = reg ? "учтено" : nice(REG);
+    el.lvRegN.textContent = dKm > 0.01 ? "= " + (REG / dKm).toFixed(1) + " км, бесплатно" : "бесплатно";
+    el.lvCoef.textContent = nice(b * 0.1);
+
+    paintGrid(coef, km, pace);
+    drawStreak(coef, att);
+  }
+
+  ["km", "pace", "coef", "att"].forEach(function (k) {
+    el[k].addEventListener("input", render);
+  });
+  el.reg.addEventListener("change", render);
+
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", render);
+  }
+
+  render();
+})();
+</script>
+
+</body>
+</html>
