@@ -4,7 +4,7 @@
 коэффициент. Один файл `index.html`, без зависимостей и без интернета —
 открывается двойным кликом и работает офлайн.
 
-**Живая версия:** https://SMAGIN.github.io/diehard-points/
+**Живая версия:** https://smagart.github.io/diehard-points/
 _(подставится после включения GitHub Pages)_
 
 ## Что внутри
