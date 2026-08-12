@@ -535,6 +535,11 @@
         <span><b>Записался заранее</b> — до воскресенья, +3 балла</span>
       </label>
 
+      <label class="check">
+        <input type="checkbox" id="female">
+        <span><b>Женский зачёт</b> — +10% к итоговой сумме</span>
+      </label>
+
     </div>
 
     <div class="result">
@@ -674,7 +679,7 @@
   var SPEEDS = PACES.map(function (p) { return 3600 / p; });   // возрастают
 
   var TABLE_COEF = 2, MIN_KM = 20, MAX_PACE = 420, CUTOFF = 480;
-  var MIN_BASE = 5, REG = 3;
+  var MIN_BASE = 5, REG = 3, FEMALE = 1.1;
 
   function span(axis, x) {
     var n = axis.length;
@@ -699,10 +704,13 @@
     return Math.max(MIN_BASE, raw(km, pace) / TABLE_COEF);
   }
 
-  function points(km, pace, coef, reg) {
+  // Женские 10% начисляются «к итоговой сумме», то есть последними — после
+  // коэффициента и после бонуса за раннюю запись.
+  function points(km, pace, coef, reg, female) {
     var b = base(km, pace);
     if (!b) return 0;
-    return b * coef + (reg ? REG : 0);
+    var t = b * coef + (reg ? REG : 0);
+    return female ? t * FEMALE : t;
   }
 
   function fmtPace(sec) {
@@ -721,6 +729,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var el = {
     km: $("km"), pace: $("pace"), coef: $("coef"), reg: $("reg"), att: $("att"),
+    female: $("female"),
     kmOut: $("km-out"), paceOut: $("pace-out"), coefOut: $("coef-out"), attOut: $("att-out"),
     score: $("score"), unit: $("unit"), breakdown: $("breakdown"), flag: $("flag"),
     lvKm: $("lv-km"), lvPace: $("lv-pace"), lvPaceN: $("lv-pace-n"),
@@ -752,9 +761,9 @@
     cells = Array.prototype.slice.call(el.gridBody.querySelectorAll("td"));
   })();
 
-  function paintGrid(coef, km, pace) {
+  function paintGrid(coef, km, pace, female) {
     var cap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--heat-cap")) || 50;
-    var max = points(42, 240, coef, false);
+    var max = points(42, 240, coef, false, female);
     var bestKm = GRID_KMS.reduce(function (a, b) {
       return Math.abs(b - km) < Math.abs(a - km) ? b : a;
     });
@@ -764,7 +773,7 @@
 
     cells.forEach(function (td) {
       var k = +td.dataset.km, p = +td.dataset.pace;
-      var v = points(k, p, coef, false);
+      var v = points(k, p, coef, false, female);
       td.textContent = v.toFixed(1);
       var t = max ? Math.pow(v / max, 0.8) : 0;
       td.style.background = "color-mix(in oklab, var(--heat) " + (t * cap).toFixed(1) + "%, transparent)";
@@ -775,7 +784,7 @@
 
   /* ---------- серия ---------- */
 
-  function drawStreak(coef, att) {
+  function drawStreak(coef, att, female) {
     var W = 420, H = 170, PAD_L = 30, PAD_R = 8, PAD_T = 12, PAD_B = 26;
     var weeks = 16;
     var drift = 0.1 * att - 0.2 * (1 - att);       // ожидаемое изменение за неделю
@@ -836,8 +845,10 @@
     el.coefOut.textContent = coef.toFixed(1);
     el.attOut.innerHTML = Math.round(att * 100) + "<small>% воскресений</small>";
 
+    var fem = el.female.checked;
+    var femK = fem ? FEMALE : 1;
     var b = base(km, pace);
-    var total = points(km, pace, coef, reg);
+    var total = points(km, pace, coef, reg, fem);
 
     if (pace > CUTOFF) {
       el.score.textContent = "—";
@@ -857,10 +868,11 @@
       el.unit.textContent = "балла за пробежку";
       el.breakdown.innerHTML = "база " + b.toFixed(2) + ' <span class="op">×</span> коэф. ' +
         coef.toFixed(1) + (reg ? ' <span class="op">+</span> 3 за запись' : "") +
+        (fem ? ' <span class="op">, затем</span> +10%' : "") +
         '<br><span class="op">время в пути</span> ' + dur(km * pace);
 
       if (pace > 350 && pace <= 420) {
-        var gain = points(km, 350, coef, reg) - total;
+        var gain = points(km, 350, coef, reg, fem) - total;
         el.flag.innerHTML = "Ты вне бонусной зоны. Разогнаться до 5:50/км — это сразу " +
                             nice(gain) + " балла.";
       } else if (km > 35) {
@@ -870,23 +882,25 @@
       }
     }
 
-    var dKm = base(Math.min(km + 1, 42.2), pace) * coef - b * coef;
-    var dPace = base(km, Math.max(pace - 10, 180)) * coef - b * coef;
+    var dKm = (base(Math.min(km + 1, 42.2), pace) - b) * coef * femK;
+    var dPace = (base(km, Math.max(pace - 10, 180)) - b) * coef * femK;
+    var dReg = REG * femK;
     el.lvKm.textContent = nice(dKm);
     el.lvPace.textContent = nice(dPace);
     el.lvPaceN.textContent = dKm > 0.01 ? "= " + (dPace / dKm).toFixed(1) + " км дистанции" : "дистанция уже не даёт";
-    el.lvReg.textContent = reg ? "учтено" : nice(REG);
-    el.lvRegN.textContent = dKm > 0.01 ? "= " + (REG / dKm).toFixed(1) + " км, бесплатно" : "бесплатно";
-    el.lvCoef.textContent = nice(b * 0.1);
+    el.lvReg.textContent = reg ? "учтено" : nice(dReg);
+    el.lvRegN.textContent = dKm > 0.01 ? "= " + (dReg / dKm).toFixed(1) + " км, бесплатно" : "бесплатно";
+    el.lvCoef.textContent = nice(b * 0.1 * femK);
 
-    paintGrid(coef, km, pace);
-    drawStreak(coef, att);
+    paintGrid(coef, km, pace, fem);
+    drawStreak(coef, att, fem);
   }
 
   ["km", "pace", "coef", "att"].forEach(function (k) {
     el[k].addEventListener("input", render);
   });
   el.reg.addEventListener("change", render);
+  el.female.addEventListener("change", render);
 
   if (window.matchMedia) {
     var mq = window.matchMedia("(prefers-color-scheme: dark)");
