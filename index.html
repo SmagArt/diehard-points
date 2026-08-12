@@ -6,6 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="Калькулятор баллов зачёта Die Hard: дистанция, темп и коэффициент.">
 <title>Калькулятор баллов Die Hard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>
 <style>
   :root {
     /* светлая тема — прохладная бумага с зелёным уклоном */
@@ -486,12 +487,36 @@
     margin: 0;
   }
 
+  .ver {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .5rem .9rem;
+    margin: .9rem 0 0;
+    font-family: var(--f-num);
+    font-size: .76rem;
+    color: var(--muted);
+  }
+
+  .ver b {
+    color: var(--ink-2);
+    font-weight: 650;
+    letter-spacing: .01em;
+  }
+
+  .ver a { color: var(--accent); text-decoration: none; }
+  .ver a:hover, .ver a:focus-visible { text-decoration: underline; }
+
   @media (prefers-reduced-motion: no-preference) {
     .score, .lever-v { transition: color .15s ease; }
   }
 </style>
 </head>
 <body>
+<rect width='32' height='32' rx='7' fill='%231F6B45'/><rect x='6.5' y='18' width='5' height='8' rx='1.5' fill='%23fff'/><rect x='13.5' y='12' width='5' height='14' rx='1.5' fill='%23fff'/><rect x='20.5' y='6' width='5' height='20' rx='1.5' fill='%23fff'/></svg>">
+
+
+
 <div class="wrap">
 
   <header>
@@ -637,7 +662,13 @@
   </section>
 
   <p class="foot">
-    Формула: <b>(база + 3 за запись) × коэффициент</b>, женщинам затем +10%. База берётся из таблицы организаторов — она опубликована для коэффициента 2.0, поэтому база = таблица ÷ 2. Порядок операций сверен с тремя фактическими начислениями (25.9 км при коэф. 1.9 → 59, 31 км при 1.6 с женским → 56, 26.2 км при 1.1 → 21) — расчёт совпадает с каждым после округления. Бонус за запись входит в базу <b>до</b> умножения, поэтому при высоком коэффициенте он стоит куда дороже трёх баллов.
+    Формула: <b>(база + 3 за запись) × коэффициент</b>, женщинам затем ×1.1. База берётся из таблицы организаторов — она опубликована для коэффициента 2.0, поэтому база = таблица ÷ 2. Порядок операций сверен с тремя фактическими начислениями (25.9 км при коэф. 1.9 → 59, 31 км при 1.6 с женским → 56, 26.2 км при 1.1 → 21) — расчёт совпадает с каждым после округления. Бонус за запись входит в базу <b>до</b> умножения, поэтому при высоком коэффициенте он стоит куда дороже трёх баллов.
+  </p>
+
+  <p class="ver">
+    <span><b>Версия 1.2</b> · 12.08.2026</span>
+    <span>Исправлен порядок операций и добавлен женский зачёт</span>
+    <span><a href="https://github.com/SmagArt/diehard-points">исходники и история правок</a></span>
   </p>
 
 </div>
