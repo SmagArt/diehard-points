@@ -92,7 +92,7 @@ def main() -> int:
         problems.append("нечётное число кавычек в <head> — оборванный атрибут")
     if body_start.lstrip().startswith(('">', "'>", ">")):
         problems.append("тело начинается с обрывка тега")
-    for probe in ("Версия", "var TABLE", "id=\"female\""):
+    for probe in ("Версия", "var ZONES", "function distBonus", "id=\"female\""):
         if probe not in doc:
             problems.append(f"пропало из документа: {probe!r}")
     if problems:
