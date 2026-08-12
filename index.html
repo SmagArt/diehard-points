@@ -637,7 +637,7 @@
   </section>
 
   <p class="foot">
-    Считает по официальной таблице организаторов — она опубликована для коэффициента 2.0, здесь пересчитано на твой. Одно место требует уточнения: прибавляются ли <b>+3 за запись</b> до умножения на коэффициент или после (здесь — после). На выбор «длиннее или быстрее» это не влияет.
+    Формула: <b>(база + 3 за запись) × коэффициент</b>, женщинам затем +10%. База берётся из таблицы организаторов — она опубликована для коэффициента 2.0, поэтому база = таблица ÷ 2. Порядок операций сверен с тремя фактическими начислениями (25.9 км при коэф. 1.9 → 59, 31 км при 1.6 с женским → 56, 26.2 км при 1.1 → 21) — расчёт совпадает с каждым после округления. Бонус за запись входит в базу <b>до</b> умножения, поэтому при высоком коэффициенте он стоит куда дороже трёх баллов.
   </p>
 
 </div>
@@ -704,12 +704,14 @@
     return Math.max(MIN_BASE, raw(km, pace) / TABLE_COEF);
   }
 
-  // Женские 10% начисляются «к итоговой сумме», то есть последними — после
-  // коэффициента и после бонуса за раннюю запись.
+  // Порядок операций сверен с фактическими начислениями:
+  //   (база + 3 за запись) x коэффициент, затем женские +10%.
+  // Бонус за запись входит ДО умножения — вариант «после» давал на 2-3 балла
+  // меньше на всех трёх проверенных результатах.
   function points(km, pace, coef, reg, female) {
     var b = base(km, pace);
     if (!b) return 0;
-    var t = b * coef + (reg ? REG : 0);
+    var t = (b + (reg ? REG : 0)) * coef;
     return female ? t * FEMALE : t;
   }
 
@@ -866,9 +868,12 @@
     } else {
       el.score.textContent = total.toFixed(2);
       el.unit.textContent = "балла за пробежку";
-      el.breakdown.innerHTML = "база " + b.toFixed(2) + ' <span class="op">×</span> коэф. ' +
-        coef.toFixed(1) + (reg ? ' <span class="op">+</span> 3 за запись' : "") +
-        (fem ? ' <span class="op">, затем</span> +10%' : "") +
+      el.breakdown.innerHTML =
+        (reg ? '<span class="op">(</span>база ' + b.toFixed(2) +
+               ' <span class="op">+</span> 3 за запись<span class="op">)</span>'
+             : "база " + b.toFixed(2)) +
+        ' <span class="op">×</span> коэф. ' + coef.toFixed(1) +
+        (fem ? ' <span class="op">×</span> 1.1 женский' : "") +
         '<br><span class="op">время в пути</span> ' + dur(km * pace);
 
       if (pace > 350 && pace <= 420) {
@@ -884,7 +889,7 @@
 
     var dKm = (base(Math.min(km + 1, 42.2), pace) - b) * coef * femK;
     var dPace = (base(km, Math.max(pace - 10, 180)) - b) * coef * femK;
-    var dReg = REG * femK;
+    var dReg = REG * coef * femK;   // бонус входит в базу, значит множится
     el.lvKm.textContent = nice(dKm);
     el.lvPace.textContent = nice(dPace);
     el.lvPaceN.textContent = dKm > 0.01 ? "= " + (dPace / dKm).toFixed(1) + " км дистанции" : "дистанция уже не даёт";
